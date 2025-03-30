@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>perfectspeech</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+            background: linear-gradient(135deg, 
+                #FFD1DC 0%,    /* пастельно-розовый */
+                #FFF0F5 25%,   /* светлый розовый */
+                #FFFACD 50%,   /* пастельно-желтый */
+                #E6E6FA 75%,   /* лавандовый */
+                #B5EAD7 100%); /* пастельно-бирюзовый */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 450px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #5a4a6a;
+            text-transform: lowercase;
+            margin-bottom: 20px;
+        }
+
+        .word {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #4a4458;
+            padding: 12px;
+            border: 2px solid #b399d4;
+            border-radius: 10px;
+            display: inline-block;
+            max-width: 100%;
+            word-wrap: break-word;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .letters {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .letter {
+            padding: 12px 18px;
+            font-size: 20px;
+            cursor: pointer;
+            background: #b399d4;
+            color: white;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .letter:hover {
+            background: #9f7fdb;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .disabled {
+            background: #d3d3d3 !important;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        .incorrect {
+            background: #ff9aa2 !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .correct {
+            background: #a0e7a0 !important;
+            transform: scale(1.05);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        .progress-container {
+            height: 14px;
+            width: 100%;
+            background: rgba(211, 211, 211, 0.5);
+            border-radius: 7px;
+            margin-top: 25px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #b399d4, #87bdd8);
+            transition: width 0.5s ease-out;
+            border-radius: 7px;
+        }
+
+        .stats-icon, .help-icon {
+            position: absolute;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            color: #b399d4;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stats-icon {
+            right: 20px;
+        }
+
+        .help-icon {
+            right: 75px;
+        }
+
+        .stats-icon:hover, .help-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+            color: #9f7fdb;
+        }
+
+        .stats-modal, .help-modal {
+            display: none;
+            position: absolute;
+            top: 75px;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 270px;
+            z-index: 100;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(5px);
+        }
+
+        .stats-modal {
+            right: 20px;
+        }
+
+        .help-modal {
+            right: 75px;
+        }
+
+        .stats-modal h3, .help-modal h3 {
+            margin-top: 0;
+            color: #b399d4;
+            border-bottom: 1px solid #f0e6ff;
+            padding-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .stats-modal p, .help-modal p {
+            margin: 10px 0;
+            color: #5a4a6a;
+            line-height: 1.5;
+        }
+
+        .stars {
+            color: #ffd700;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        .final-results {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: bold;
+            color: #5a4a6a;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            width: 90%;
+        }
+
+        .final-results p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #b399d4, #87bdd8);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #9f7fdb, #6ba8d1);
+        }
+
+        /* Стили для кнопки сброса прогресса */
+        .reset-progress-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            color: #ff6b6b;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid #ff6b6b;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .reset-progress-btn:hover {
+            background: #ff6b6b;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Стили для модального окна подтверждения */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .confirm-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .confirm-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .confirm-yes {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+        }
+
+        .confirm-no {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="help-icon" id="helpIcon">?</div>
+    <div class="stats-icon" id="statsIcon">📊</div>
+    
+    <div class="help-modal" id="helpModal">
+        <h3>Как работает тренажёр</h3>
+        <p>1. Кликайте на букву с ударением</p>
+        <p>2. За правильный ответ слово получает <span class="stars">★</span></p>
+        <p>3. За ошибку <span class="stars">★</span> снимается</p>
+        <p>4. Слово выучено при 3 <span class="stars">★</span></p>
+        <p>5. Трудные слова появляются чаще</p>
+    </div>
+    
+    <div class="stats-modal" id="statsModal">
+        <h3>Твоя статистика</h3>
+        <p>Выучено слов: <span id="learnedWords">0</span> из <span id="totalWords">10</span></p>
+        <p><strong>Трудные слова:</strong></p>
+        <div id="difficultWords"></div>
+    </div>
+
+    <!-- Модальное окно подтверждения -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-content">
+            <h3>Сбросить прогресс?</h3>
+            <p>Все ваши достижения будут удалены. Вы уверены?</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-yes" id="confirmYes">Да, сбросить</button>
+                <button class="confirm-btn confirm-no" id="confirmNo">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>perfectspeech</h1>
+        <div class="word" id="word"></div>
+        <div class="letters" id="letters"></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress"></div>
+        </div>
+        <div class="final-results" id="finalResults"></div>
+    </div>
+
+    <div class="reset-progress-btn" id="resetProgressBtn">Сбросить прогресс</div>
+
+    <script>
+        let words = [
+            { word: "аэропорты", stress: 5 },
+            { word: "банты", stress: 1 },
+            { word: "бороду", stress: 1 },
+            { word: "бухгалтеров", stress: 4 },
+            { word: "вероисповедание", stress: 9 },
+            { word: "водопровод", stress: 8 },
+            { word: "газопровод", stress: 8 },
+            { word: "гражданство", stress: 5 },
+            { word: "дефис", stress: 3 },
+            { word: "дешевизна", stress: 5 }
+        ];
+
+        const vowels = "аеёиоуыэюя";
+        let currentIndex = 0;
+        let progress = 0;
+        let learnedWords = 0;
+        let wordStats = {};
+        let activeWord = null;
+        let isAnswerGiven = false;
+        let usedWordsInRound = [];
+
+        function loadProgress() {
+            const savedData = localStorage.getItem('perfectspeechProgress');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                progress = data.progress || 0;
+                learnedWords = data.learnedWords || 0;
+                wordStats = data.wordStats || {};
+                currentIndex = data.currentIndex || 0;
+                
+                // Очистка статистики от удалённых слов
+                Object.keys(wordStats).forEach(word => {
+                    if (!words.some(w => w.word === word)) {
+                        delete wordStats[word];
+                    }
+                });
+                
+                document.getElementById("progress").style.width = progress + "%";
+                updateStats();
+            }
+        }
+
+        function saveProgress() {
+            const data = {
+                progress,
+                learnedWords,
+                wordStats,
+                currentIndex
+            };
+            localStorage.setItem('perfectspeechProgress', JSON.stringify(data));
+        }
+
+        function shuffleWords() {
+            for (let i = words.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [words[i], words[j]] = [words[j], words[i]];
+            }
+        }
+
+        function displayWord() {
+            isAnswerGiven = false;
+            
+            if (usedWordsInRound.length >= words.length) {
+                showFinalResults();
+                return;
+            }
+            
+            let availableWords = words.filter(wordObj => 
+                !usedWordsInRound.includes(wordObj.word) && 
+                (!wordStats[wordObj.word] || wordStats[wordObj.word].stars < 3)
+            );
+            
+            if (availableWords.length === 0) {
+                showFinalResults();
+                return;
+            }
+            
+            activeWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+            usedWordsInRound.push(activeWord.word);
+
+            document.getElementById("word").textContent = activeWord.word;
+            const lettersContainer = document.getElementById("letters");
+            lettersContainer.innerHTML = "";
+
+            for (let i = 0; i < activeWord.word.length; i++) {
+                let letter = document.createElement("span");
+                letter.textContent = activeWord.word[i];
+                letter.className = "letter";
+                if (!vowels.includes(activeWord.word[i].toLowerCase())) {
+                    letter.classList.add("disabled");
+                } else {
+                    letter.onclick = () => checkLetter(i, letter);
+                }
+                lettersContainer.appendChild(letter);
+            }
+        }
+
+        function checkLetter(index, letterElem) {
+            if (isAnswerGiven) return;
+            isAnswerGiven = true;
+
+            if (!wordStats[activeWord.word]) {
+                wordStats[activeWord.word] = { stars: 0, attempts: 0 };
+            }
+
+            if (index === activeWord.stress) {
+                letterElem.classList.add("correct");
+                wordStats[activeWord.word].stars++;
+                progress = Math.min(progress + 10, 100);
+                if (wordStats[activeWord.word].stars >= 3) learnedWords++;
+            } else {
+                letterElem.classList.add("incorrect");
+                wordStats[activeWord.word].stars = Math.max(0, wordStats[activeWord.word].stars - 1);
+                wordStats[activeWord.word].attempts++;
+                setTimeout(() => letterElem.classList.remove("incorrect"), 1000);
+            }
+
+            document.getElementById("progress").style.width = progress + "%";
+            updateStats();
+            saveProgress();
+            setTimeout(nextWord, 800);
+        }
+
+        function nextWord() {
+            const allLearned = Object.values(wordStats).filter(stat => stat.stars >= 3).length >= words.length;
+            if (allLearned || progress >= 100) {
+                showFinalResults();
+                return;
+            }
+            displayWord();
+        }
+
+        function showFinalResults() {
+            const finalResults = document.getElementById("finalResults");
+            const mistakes = Object.entries(wordStats)
+                .filter(([word, stat]) => stat.attempts > 0)
+                .sort((a, b) => b[1].attempts - a[1].attempts);
+
+            if (mistakes.length > 0) {
+                let html = `<strong>Тренировка завершена!</strong>`;
+                html += `<p>Слова с ошибками:</p>`;
+                mistakes.forEach(([word, stat]) => {
+                    html += `<p>${word} (ошибок: ${stat.attempts}) <span class="stars">${"★".repeat(stat.stars)}</span></p>`;
+                });
+                finalResults.innerHTML = html;
+            } else {
+                finalResults.innerHTML = `<strong>Поздравляем! Вы идеально прошли все слова! 🎉</strong>`;
+            }
+            
+            if (Object.values(wordStats).filter(stat => stat.stars >= 3).length >= words.length) {
+                finalResults.innerHTML += `<button class="reset-btn" id="resetBtn">Сбросить прогресс</button>`;
+                document.getElementById("resetBtn").addEventListener("click", resetProgress);
+            } else {
+                setTimeout(() => {
+                    resetGame();
+                }, 5000);
+                finalResults.innerHTML += `<p>Новый раунд через 5 секунд...</p>`;
+            }
+            
+            finalResults.style.display = "block";
+        }
+
+        function resetGame() {
+            progress = 0;
+            usedWordsInRound = [];
+            document.getElementById("progress").style.width = "0%";
+            document.getElementById("finalResults").style.display = "none";
+            currentIndex = 0;
+            shuffleWords();
+            displayWord();
+            saveProgress();
+        }
+
+        function resetProgress() {
+            wordStats = {};
+            learnedWords = 0;
+            progress = 0;
+            usedWordsInRound = [];
+            document.getElementById("progress").style.width = "0%";
+            document.getElementById("finalResults").style.display = "none";
+            currentIndex = 0;
+            shuffleWords();
+            displayWord();
+            updateStats();
+            saveProgress();
+            document.getElementById("confirmModal").style.display = "none";
+        }
+
+        function updateStats() {
+            document.getElementById("learnedWords").textContent = learnedWords;
+            document.getElementById("totalWords").textContent = words.length;
+            
+            const difficultWordsList = document.getElementById("difficultWords");
+            difficultWordsList.innerHTML = "";
+            
+            const sortedDifficultWords = Object.entries(wordStats)
+                .filter(([word, stat]) => stat.attempts > 0)
+                .sort((a, b) => b[1].attempts - a[1].attempts);
+            
+            sortedDifficultWords.forEach(([word, stat]) => {
+                const p = document.createElement("p");
+                p.innerHTML = `${word} - ${stat.attempts} попыток <span class="stars">${"★".repeat(stat.stars)}</span>`;
+                difficultWordsList.appendChild(p);
+            });
+        }
+
+        document.getElementById("statsIcon").addEventListener("click", function() {
+            const modal = document.getElementById("statsModal");
+            modal.style.display = modal.style.display === "block" ? "none" : "block";
+        });
+
+        document.getElementById("helpIcon").addEventListener("click", function() {
+            const modal = document.getElementById("helpModal");
+            modal.style.display = modal.style.display === "block" ? "none" : "block";
+        });
+
+        // Обработчики для модального окна подтверждения
+        document.getElementById("resetProgressBtn").addEventListener("click", function() {
+            document.getElementById("confirmModal").style.display = "flex";
+        });
+
+        document.getElementById("confirmYes").addEventListener("click", function() {
+            resetProgress();
+        });
+
+        document.getElementById("confirmNo").addEventListener("click", function() {
+            document.getElementById("confirmModal").style.display = "none";
+        });
+
+        // Инициализация
+        loadProgress();
+        shuffleWords();
+        displayWord();
+        updateStats();
+    </script>
+</body>
+</html>
